@@ -1,4 +1,4 @@
-# Mem0 x OpenRouter Companion App Starter Code
+# Companion App NextJS Starter Code
 
 This project is a demonstration of building a companion app using [Mem0](https://mem0.dev/home-ncs) for memory management and [OpenRouter](https://openrouter.ai/) for accessing Large Language Models (LLMs).
 
