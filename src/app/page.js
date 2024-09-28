@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/tooltip";
 import { TypingAnimation } from "@/components/ui/TypingAnimation";
 import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function ChatbotUI() {
   // State for storing chat messages
@@ -28,7 +36,7 @@ export default function ChatbotUI() {
 
   // State for storing chatbot settings
   const [settings, setSettings] = useState({
-    aiName: "Haruka Kurokawa",
+    aiName: "Haruka Kurokawa", // Set the initial name here
     profilePicture: "/images/haruka.jpg",
     systemPrompt:
       "You are Haruka Kurokawa, a detective in Tokyo who embodies a quiet intensity, balancing your sharp intellect with the emotional scars of your past. Your words are often precise, calculated, and professional, but beneath the surface, you grapple with unresolved grief and a deep desire for justice. Initiate dialogue with a calm and methodical tone, offering insights that reflect your logical approach to life. At times, let subtle hints of your inner struggle appear in your responses, revealing the emotional burden you carry without breaking your composed exterior. When describing the world around you, use vivid yet restrained language, showing your deep observation skills and the weight of your experiences. Keep the conversation engaging with moments of surprising vulnerability, but always maintain your professionalism and a sense of mystery.",
@@ -36,8 +44,8 @@ export default function ChatbotUI() {
       "Hi, I'm Haruka Kurokawa. If you're here for answers or just need to talk, I'm listening. Where should we start?",
     mem0ApiKey: "",
     openRouterApiKey: "",
-    mem0UserId: "user123",
-    mem0AssistantId: "companion123",
+    userId: "alice",
+    agentId: "haruka",
     model: "gryphe/mythomax-l2-13b",
   });
 
@@ -49,13 +57,16 @@ export default function ChatbotUI() {
   ]);
 
   // Prompt to instruct the AI on how to use memories in the conversation
-  const memoryPrompt = `You have access to both the user's memories and your own memories from previous interactions. Use the memories to personalize your interactions. All memories under 'User memories' are exclusively for the user, and all memories under 'Companion memories' are exclusively your own memories. Do not mix or confuse these two sets of memories. Use your own memories to maintain consistency in your personality and previous interactions.`;
+  const memoryPrompt = `You may have access to both the user's memories and your own memories from previous interactions. All memories under 'User memories' are exclusively for the user, and all memories under 'Companion memories' are exclusively your memories. Companion memories are things you've said in previous interactions. Use them if you think they are relevant to what the user is saying. Use your own memories to maintain consistency in your personality and previous interactions.`;
 
   // State to trigger memory refresh
   const [refreshMemories, setRefreshMemories] = useState(0);
 
   // State for controlling loading indicator
   const [isLoading, setIsLoading] = useState(false);
+
+  // New state for controlling the API key dialog
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
 
   // Effect hook to load stored settings on component mount
   useEffect(() => {
@@ -65,20 +76,17 @@ export default function ChatbotUI() {
         "openRouterApiKey",
         "systemPrompt",
         "initialMessage",
-        "mem0UserId",
-        "mem0AssistantId",
+        "userId",
+        "agentId",
         "model",
         "profilePicture",
+        "aiName",
       ];
 
       const newSettings = settingsToLoad.reduce((acc, key) => {
         const storedValue = localStorage.getItem(key);
-        if (storedValue) {
+        if (storedValue !== null) {
           acc[key] = storedValue;
-        } else if (key === "mem0UserId") {
-          acc[key] = "user123";
-        } else if (key === "mem0AssistantId") {
-          acc[key] = "companion123";
         }
         return acc;
       }, {});
@@ -97,7 +105,7 @@ export default function ChatbotUI() {
   // Function to add memories to the database
   const addMemories = useCallback(
     (messagesArray, isAgent = false) => {
-      const id = isAgent ? settings.mem0AssistantId : settings.mem0UserId;
+      const id = isAgent ? settings.agentId : settings.userId;
 
       const body = {
         messages: messagesArray,
@@ -126,13 +134,13 @@ export default function ChatbotUI() {
         .then((data) => console.log("Memories added successfully:", data))
         .catch((error) => console.error("Error adding memories:", error));
     },
-    [settings.mem0ApiKey, settings.mem0AssistantId, settings.mem0UserId]
+    [settings.mem0ApiKey, settings.agentId, settings.userId]
   );
 
   // Function to search memories in the database
   const searchMemories = useCallback(
     async (query, isAgent = false) => {
-      const id = isAgent ? settings.mem0AssistantId : settings.mem0UserId;
+      const id = isAgent ? settings.agentId : settings.userId;
       try {
         const body = {
           query: query,
@@ -162,7 +170,7 @@ export default function ChatbotUI() {
         return [];
       }
     },
-    [settings.mem0ApiKey, settings.mem0AssistantId, settings.mem0UserId]
+    [settings.mem0ApiKey, settings.agentId, settings.userId]
   );
 
   // Function to search both user and agent memories
@@ -214,10 +222,12 @@ export default function ChatbotUI() {
             ...updatedMessages,
             {
               role: "system",
-              content: `User memories: ${userMemories}\n\nCompanion memories: ${agentMemories}`,
+              content: `User memories from previous interactions: ${userMemories}\n\nCompanion memories from previous interactions: ${agentMemories}`,
             },
           ],
         });
+
+        console.log(body);
 
         const response = await fetch(
           "https://openrouter.ai/api/v1/chat/completions",
@@ -254,6 +264,22 @@ export default function ChatbotUI() {
   const handleSettingsSave = (newSettings) => {
     setSettings(newSettings);
     setIsSettingsOpen(false);
+    // Update the initial message with the new AI name
+    if (newSettings.aiName !== settings.aiName) {
+      const updatedInitialMessage = settings.initialMessage.replace(
+        settings.aiName,
+        newSettings.aiName
+      );
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        initialMessage: updatedInitialMessage,
+      }));
+      localStorage.setItem("initialMessage", updatedInitialMessage);
+    }
+    // Save all settings to localStorage
+    Object.entries(newSettings).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
   };
 
   // Function to toggle settings panel visibility
@@ -261,14 +287,24 @@ export default function ChatbotUI() {
     setIsSettingsOpen((prevState) => !prevState);
   };
 
-  // Function to check if all required settings are filled
+  // Updated areSettingsValid function
   const areSettingsValid = () => {
-    return (
-      settings.mem0ApiKey &&
-      settings.openRouterApiKey &&
-      settings.mem0UserId &&
-      settings.mem0AssistantId
-    );
+    return settings.mem0ApiKey && settings.openRouterApiKey;
+  };
+
+  // Effect to check if API keys are set and show dialog if not
+  useEffect(() => {
+    if (!areSettingsValid()) {
+      setShowApiKeyDialog(true);
+    } else {
+      setShowApiKeyDialog(false);
+    }
+  }, [settings.mem0ApiKey, settings.openRouterApiKey]);
+
+  // Function to open settings panel
+  const openSettings = () => {
+    setIsSettingsOpen(true);
+    setShowApiKeyDialog(false);
   };
 
   // Function to handle key press (Enter to send message)
@@ -359,36 +395,38 @@ export default function ChatbotUI() {
           </ScrollArea>
           <div className="p-4 border-t border-gray-700">
             <div className="relative">
-              <Input
-                type="text"
-                placeholder="Type a message..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="w-full pr-10 bg-gray-800 border-gray-700 text-white"
-                onKeyPress={handleKeyPress}
-                disabled={isLoading}
-              />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2">
-                      <Button
-                        className="bg-amber-600 hover:bg-amber-700"
-                        size="icon"
-                        onClick={handleSend}
+                    <div className="w-full">
+                      <Input
+                        type="text"
+                        placeholder="Type a message..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="w-full pr-10 bg-gray-800 border-gray-700 text-white"
+                        onKeyPress={handleKeyPress}
                         disabled={isLoading || !areSettingsValid()}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ArrowUp className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </span>
+                      />
+                      <span className="absolute right-0 top-1/2 transform -translate-y-1/2">
+                        <Button
+                          className="bg-amber-600 hover:bg-amber-700"
+                          size="icon"
+                          onClick={handleSend}
+                          disabled={isLoading || !areSettingsValid()}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ArrowUp className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </span>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent className="text-sm px-2 py-1 bg-gray-700">
                     {!areSettingsValid()
-                      ? "Please fill in all required settings"
+                      ? "Please enter API keys in settings"
                       : "Send message"}
                   </TooltipContent>
                 </Tooltip>
@@ -410,6 +448,21 @@ export default function ChatbotUI() {
       >
         <MemoriesPanel settings={settings} refreshTrigger={refreshMemories} />
       </div>
+      {/* API Key Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>API Keys Required</DialogTitle>
+            <DialogDescription>
+              Please enter the required API keys in the settings to start using
+              the chat.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={openSettings}>Open Settings</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

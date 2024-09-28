@@ -9,16 +9,16 @@ export function MemoriesPanel({ settings, refreshTrigger }) {
   const [activeTab, setActiveTab] = useState("user");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch memories from the API
+  // Update this function to use userId and agentId
   const fetchMemories = useCallback(
     async (isAgent = false) => {
-      if (!settings.mem0UserId) {
+      if (!settings.userId) {
         console.error("User ID is not set");
         return [];
       }
 
       const idParam = isAgent ? "agent_id" : "user_id";
-      const idValue = isAgent ? settings.mem0AssistantId : settings.mem0UserId;
+      const idValue = isAgent ? settings.agentId : settings.userId;
 
       try {
         const response = await fetch(
@@ -45,12 +45,12 @@ export function MemoriesPanel({ settings, refreshTrigger }) {
         return [];
       }
     },
-    [settings.mem0UserId, settings.mem0AssistantId, settings.mem0ApiKey]
+    [settings.userId, settings.agentId, settings.mem0ApiKey]
   );
 
   // Refresh both user and agent memories
   const refreshMemories = useCallback(async () => {
-    if (!settings.mem0ApiKey || !settings.mem0UserId) return;
+    if (!settings.mem0ApiKey || !settings.userId) return;
 
     setIsRefreshing(true);
     try {
@@ -65,7 +65,7 @@ export function MemoriesPanel({ settings, refreshTrigger }) {
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchMemories, settings.mem0ApiKey, settings.mem0UserId]);
+  }, [fetchMemories, settings.mem0ApiKey, settings.userId]);
 
   // Refresh memories when component mounts or refreshTrigger changes
   useEffect(() => {
@@ -124,8 +124,8 @@ export function MemoriesPanel({ settings, refreshTrigger }) {
         <p>
           {activeTab === "user" ? "User" : "Agent"} ID:{" "}
           {activeTab === "user"
-            ? settings.mem0UserId || "Not set"
-            : settings.mem0AssistantId || "Not set"}
+            ? settings.userId || "Not set"
+            : settings.agentId || "Not set"}
         </p>
         <button
           className="ml-4 px-2 py-1 bg-transparent rounded"

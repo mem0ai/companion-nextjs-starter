@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // SettingsPanel component for managing user settings
 export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
@@ -14,8 +20,9 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
     showOpenRouterApiKey: false,
     mem0ApiKey: "",
     openRouterApiKey: "",
-    mem0UserId: "",
-    mem0AssistantId: "",
+    userId: settings.userId,
+    agentId: settings.agentId,
+    aiName: settings.aiName || "Haruka Kurokawa",
   });
 
   // Memoized function to handle input changes
@@ -67,7 +74,10 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const newSettings = formFields.reduce((acc, field) => {
-      acc[field.id] = formState[field.id] || settings[field.id] || "";
+      acc[field.id] =
+        formState[field.id] !== undefined
+          ? formState[field.id]
+          : settings[field.id];
       return acc;
     }, {});
     newSettings.profilePicture = profilePicture;
@@ -78,45 +88,8 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
   const formFields = [
     {
       id: "aiName",
-      label: "",
-      type: "custom",
-      render: () => (
-        <div className="flex items-center space-x-4">
-          <div className="flex-shrink-0">
-            <label htmlFor="profilePicture" className="cursor-pointer">
-              <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                {profilePicture ? (
-                  <Image
-                    src={profilePicture}
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl">+</span>
-                )}
-              </div>
-            </label>
-            <input
-              type="file"
-              id="profilePicture"
-              accept="image/*"
-              className="hidden"
-              onChange={handleProfilePictureUpload}
-            />
-          </div>
-          <div className="flex-grow">
-            <Input
-              id="aiName"
-              name="aiName"
-              value={formState.aiName || settings.aiName || ""}
-              onChange={(e) => handleChange("aiName", e.target.value)}
-              className="w-full bg-gray-700 text-sm"
-            />
-          </div>
-        </div>
-      ),
+      label: "AI Name",
+      type: "input",
     },
     { id: "systemPrompt", label: "System Prompt", type: "textarea" },
     {
@@ -137,8 +110,8 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
       type: "password",
       getSubLabel: "https://openrouter.ai/settings/keys",
     },
-    { id: "mem0UserId", label: "Mem0 User ID*", type: "input" },
-    { id: "mem0AssistantId", label: "Mem0 Agent ID*", type: "input" },
+    { id: "userId", label: "User ID", type: "input" },
+    { id: "agentId", label: "Agent ID", type: "input" },
     {
       id: "model",
       label: "AI Model",
@@ -187,6 +160,20 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
                     className="block mb-1 text-sm font-medium"
                   >
                     {label}
+                    {(id === "userId" || id === "agentId") && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="inline-block w-4 h-4 ml-1 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {id === "userId"
+                              ? "A unique identifier for the user in the Mem0 system."
+                              : "A unique identifier for the AI agent in the Mem0 system."}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                     {getSubLabel && (
                       <a
                         href={getSubLabel}
@@ -204,7 +191,11 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
                     <Textarea
                       id={id}
                       name={id}
-                      value={formState[id] || settings[id] || ""}
+                      value={
+                        formState[id] !== undefined
+                          ? formState[id]
+                          : settings[id] || ""
+                      }
                       onChange={(e) => handleChange(id, e.target.value)}
                       className={`w-full bg-gray-700 text-sm ${
                         height || "h-24"
@@ -220,7 +211,11 @@ export function SettingsPanel({ isOpen, onClose, settings, onSave }) {
                             ? "password"
                             : "text"
                         }
-                        value={formState[id] || settings[id] || ""}
+                        value={
+                          formState[id] !== undefined
+                            ? formState[id]
+                            : settings[id] || ""
+                        }
                         onChange={(e) => handleChange(id, e.target.value)}
                         className="w-full bg-gray-700 text-sm pr-8"
                       />
