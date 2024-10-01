@@ -317,152 +317,185 @@ export default function ChatbotUI() {
   };
 
   return (
-    <div className="flex h-screen">
-      <div className="fixed inset-0 flex justify-center pointer-events-none">
-        <div
-          id="chat-panel-container"
-          className="w-full max-w-lg lg:max-w-2xl flex flex-col bg-gray-900 text-white pointer-events-auto h-full"
-        >
-          <header className="flex items-center justify-between p-4 border-b-4 border-gray-700">
-            <div className="flex items-center space-x-3">
-              <Avatar className="w-10 h-10">
-                {settings.profilePicture ? (
-                  <Image
-                    src={settings.profilePicture}
-                    alt={settings.aiName}
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                  />
-                ) : (
-                  <AvatarFallback>
-                    {settings.aiName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <h1 className="text-xl font-semibold">{settings.aiName}</h1>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSettings}
-                className=" hover:bg-gray-800 hover:text-white border border-gray-700"
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-red-500 hover:bg-red-600"
-                onClick={() =>
-                  setMessages([
-                    {
-                      role: "assistant",
-                      content: settings.initialMessage,
-                    },
-                  ])
-                }
-              >
-                <RefreshCw className="w-5 h-5" />
-              </Button>
-            </div>
-          </header>
-          <ScrollArea className="flex-grow p-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-4 ${
-                  message.role === "user" ? "text-right" : ""
-                }`}
-              >
-                {message.content === null ? (
-                  <TypingAnimation />
-                ) : (
-                  <div
-                    className={`inline-block p-3 rounded-lg ${
-                      message.role === "user" ? "bg-blue-600" : "bg-gray-800"
-                    }`}
-                  >
-                    {message.content}
-                  </div>
-                )}
+    <div className="flex h-screen flex-col">
+      <div className="bg-blue-600 text-white text-center py-2 text-sm">
+        <p>
+          Built with{" "}
+          <a
+            href="https://mem0.ai"
+            className="font-bold underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Mem0
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://openrouter.ai"
+            className="font-bold underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            OpenRouter
+          </a>
+          . View code on{" "}
+          <a
+            href="https://github.com/mem0ai/companion-nextjs-starter"
+            className="font-bold underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+        </p>
+      </div>
+      <div className="flex flex-grow">
+        <div className="fixed mt-10 inset-0 flex justify-center pointer-events-none">
+          <div
+            id="chat-panel-container"
+            className="w-full max-w-lg lg:max-w-2xl flex flex-col bg-gray-900 text-white pointer-events-auto h-full"
+          >
+            <header className="flex items-center justify-between p-4 border-b-4 border-gray-700">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-10 h-10">
+                  {settings.profilePicture ? (
+                    <Image
+                      src={settings.profilePicture}
+                      alt={settings.aiName}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback>
+                      {settings.aiName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <h1 className="text-xl font-semibold">{settings.aiName}</h1>
               </div>
-            ))}
-          </ScrollArea>
-          <div className="p-4 border-t border-gray-700">
-            <div className="relative">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="w-full">
-                      <Input
-                        type="text"
-                        placeholder="Type a message..."
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        className="w-full pr-10 bg-gray-800 border-gray-700 text-white"
-                        onKeyPress={handleKeyPress}
-                        disabled={isLoading || !areSettingsValid()}
-                      />
-                      <span className="absolute right-0 top-1/2 transform -translate-y-1/2">
-                        <Button
-                          className="bg-amber-600 hover:bg-amber-700"
-                          size="icon"
-                          onClick={handleSend}
-                          disabled={isLoading || !areSettingsValid()}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <ArrowUp className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </span>
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSettings}
+                  className=" hover:bg-gray-800 hover:text-white border border-gray-700"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-red-500 hover:bg-red-600"
+                  onClick={() =>
+                    setMessages([
+                      {
+                        role: "assistant",
+                        content: settings.initialMessage,
+                      },
+                    ])
+                  }
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </Button>
+              </div>
+            </header>
+            <ScrollArea className="flex-grow p-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`mb-4 ${
+                    message.role === "user" ? "text-right" : ""
+                  }`}
+                >
+                  {message.content === null ? (
+                    <TypingAnimation />
+                  ) : (
+                    <div
+                      className={`inline-block p-3 rounded-lg ${
+                        message.role === "user" ? "bg-blue-600" : "bg-gray-800"
+                      }`}
+                    >
+                      {message.content}
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="text-sm px-2 py-1 bg-gray-700">
-                    {!areSettingsValid()
-                      ? "Please enter API keys in settings"
-                      : "Send message"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  )}
+                </div>
+              ))}
+            </ScrollArea>
+            <div className="p-4 border-t border-gray-700">
+              <div className="relative">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-full">
+                        <Input
+                          type="text"
+                          placeholder="Type a message..."
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          className="w-full pr-10 bg-gray-800 border-gray-700 text-white"
+                          onKeyPress={handleKeyPress}
+                          disabled={isLoading || !areSettingsValid()}
+                        />
+                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2">
+                          <Button
+                            className="bg-amber-600 hover:bg-amber-700"
+                            size="icon"
+                            onClick={handleSend}
+                            disabled={isLoading || !areSettingsValid()}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <ArrowUp className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="text-sm px-2 py-1 bg-gray-700">
+                      {!areSettingsValid()
+                        ? "Please enter API keys in settings"
+                        : "Send message"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
+            <SettingsPanel
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              settings={settings}
+              onSave={handleSettingsSave}
+            />
           </div>
-          <SettingsPanel
-            isOpen={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-            settings={settings}
-            onSave={handleSettingsSave}
-          />
         </div>
+        <div className="flex-grow" /> {/* Spacer */}
+        <div
+          id="memories-panel-container"
+          className="w-80 flex-shrink-0 overflow-y-auto bg-gray-800 m-2"
+        >
+          <MemoriesPanel settings={settings} refreshTrigger={refreshMemories} />
+        </div>
+        {/* API Key Dialog */}
+        <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>API Keys Required</DialogTitle>
+              <DialogDescription>
+                Please enter the required API keys in the settings to start
+                using the chat.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={openSettings}>Open Settings</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      <div className="flex-grow" /> {/* Spacer */}
-      <div
-        id="memories-panel-container"
-        className="w-80 flex-shrink-0 overflow-y-auto bg-gray-800 m-2"
-      >
-        <MemoriesPanel settings={settings} refreshTrigger={refreshMemories} />
-      </div>
-      {/* API Key Dialog */}
-      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>API Keys Required</DialogTitle>
-            <DialogDescription>
-              Please enter the required API keys in the settings to start using
-              the chat.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={openSettings}>Open Settings</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
